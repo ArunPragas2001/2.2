@@ -1,0 +1,12 @@
+a = 8;
+b = 4;
+c = a + b;
+d = a - b;
+e = a * b;
+f = a / b;
+g = a % b;
+console.log(`Sum is ${c}`);
+console.log(`Substraction is ${d}`);
+console.log(`Multiplication is ${e}`);
+console.log(`Division is ${f}`);
+console.log(`Modulus is ${g}`);
