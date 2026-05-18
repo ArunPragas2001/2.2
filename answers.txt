@@ -1,0 +1,428 @@
+#!/bin/bash
+
+sum=0
+
+echo "Enter 10 numbers:"
+
+for ((i=1; i<=10; i++))
+do
+  read num
+
+  if (( num % 5 == 0 ))
+  then
+    sum=$((sum + num))
+  fi
+done
+
+echo "Sum of numbers divisible by 5 is: $sum"
+
+
+
+
+
+#include <stdio.h>
+
+int main() {
+    int num, original, digit, sum;
+
+    printf("Armstrong numbers between 100 and 999 are:\n");
+
+    for (num = 100; num <= 999; num++) {
+        original = num;
+        sum = 0;
+
+        while (original != 0) {
+            digit = original % 10;
+            sum += digit * digit * digit;
+            original /= 10;
+        }
+
+        if (sum == num) {
+            printf("%d\n", num);
+        }
+    }
+
+    return 0;
+}
+
+
+#include <stdio.h>
+#include <stdlib.h>
+#include <unistd.h>
+#include <string.h>
+#include <ctype.h>
+#include <sys/types.h>
+#include <sys/wait.h>
+
+void parseTemp(char *input, float *value, char *unit) {
+    sscanf(input, "%f%c", value, unit);
+    *unit = toupper(*unit);
+}
+
+float c_to_f(float c) { return (9.0/5.0) * c + 32; }
+float f_to_c(float f) { return (f - 32) * 5.0/9.0; }
+float k_to_c(float k) { return k - 273.15; }
+
+int main() {
+
+    int p1[2], p2[2], p3[2];
+    int c1[2], c2[2], c3[2];
+
+    pipe(p1); pipe(p2); pipe(p3);
+    pipe(c1); pipe(c2); pipe(c3);
+
+    pid_t pid1 = fork();
+
+    if (pid1 == 0) {
+        close(p1[1]); close(c1[0]);
+
+        char input[20];
+        read(p1[0], input, sizeof(input));
+
+        float val; char unit;
+        parseTemp(input, &val, &unit);
+
+        printf("[Child1 PID=%d PPID=%d] %s\n", getpid(), getppid(), input);
+
+        float res = c_to_f(val);
+
+        write(c1[1], &res, sizeof(res));
+
+        close(p1[0]); close(c1[1]);
+        exit(0);
+    }
+
+    pid_t pid2 = fork();
+
+    if (pid2 == 0) {
+        close(p2[1]); close(c2[0]);
+
+        char input[20];
+        read(p2[0], input, sizeof(input));
+
+        float val; char unit;
+        parseTemp(input, &val, &unit);
+
+        printf("[Child2 PID=%d PPID=%d] %s\n", getpid(), getppid(), input);
+
+        float res = f_to_c(val);
+
+        write(c2[1], &res, sizeof(res));
+
+        close(p2[0]); close(c2[1]);
+        exit(0);
+    }
+
+    pid_t pid3 = fork();
+
+    if (pid3 == 0) {
+        close(p3[1]); close(c3[0]);
+
+        char input[20];
+        read(p3[0], input, sizeof(input));
+
+        float val; char unit;
+        parseTemp(input, &val, &unit);
+
+        printf("[Child3 PID=%d PPID=%d] %s\n", getpid(), getppid(), input);
+
+        float res = k_to_c(val);
+
+        write(c3[1], &res, sizeof(res));
+
+        close(p3[0]); close(c3[1]);
+        exit(0);
+    }
+
+    close(p1[0]); close(p2[0]); close(p3[0]);
+    close(c1[1]); close(c2[1]); close(c3[1]);
+
+    char t1[20], t2[20], t3[20];
+
+    scanf("%s %s %s", t1, t2, t3);
+
+    write(p1[1], t1, sizeof(t1));
+    write(p2[1], t2, sizeof(t2));
+    write(p3[1], t3, sizeof(t3));
+
+    close(p1[1]); close(p2[1]); close(p3[1]);
+
+    wait(NULL); wait(NULL); wait(NULL);
+
+    return 0;
+}
+
+
+
+#include <stdio.h>
+#include <unistd.h>
+#include <sys/types.h>
+#include <sys/wait.h>
+
+void printTask(char *name, int level) {
+    printf("Task: %s | PID=%d | PPID=%d | Level=%d\n",
+           name, getpid(), getppid(), level);
+}
+
+int main() {
+
+    printTask("Main Task Manager", 0);
+    sleep(1);
+
+    pid_t p1 = fork();
+
+    if (p1 == 0) {
+        printTask("File Backup Task", 1);
+        sleep(1);
+
+        if (fork() == 0) {
+            printTask("Read Files", 2);
+            sleep(1);
+            _exit(0);
+        }
+
+        if (fork() == 0) {
+            printTask("Write Backup", 2);
+            sleep(1);
+            _exit(0);
+        }
+
+        wait(NULL); wait(NULL);
+        _exit(0);
+    }
+
+    pid_t p2 = fork();
+
+    if (p2 == 0) {
+        printTask("Network Monitoring Task", 1);
+        sleep(1);
+
+        if (fork() == 0) {
+            printTask("Capture Packets", 2);
+            sleep(1);
+            _exit(0);
+        }
+
+        if (fork() == 0) {
+            printTask("Analyse Traffic", 2);
+            sleep(1);
+            _exit(0);
+        }
+
+        wait(NULL); wait(NULL);
+        _exit(0);
+    }
+
+    if (fork() == 0) {
+        printTask("Log Cleanup Task", 1);
+        sleep(1);
+        _exit(0);
+    }
+
+    wait(NULL); wait(NULL); wait(NULL);
+
+    printf("All tasks completed\n");
+
+    return 0;
+}
+
+
+
+//patient
+
+
+#include <stdio.h>
+#include <unistd.h>
+#include <stdlib.h>
+#include <string.h>
+#include <sys/types.h>
+#include <sys/wait.h>
+
+typedef struct {
+    char name[50];
+    int heartRate;
+    int oxygen;
+} Patient;
+
+char* status(int hr, int ox) {
+    if (hr < 60 || hr > 100 || ox < 90) return "CRITICAL";
+
+    if ((hr >= 60 && hr <= 65 || hr >= 95 && hr <= 100) &&
+        (ox >= 90 && ox <= 92))
+        return "ALERT";
+
+    if (hr >= 60 && hr <= 100 && ox > 92)
+        return "STABLE";
+
+    return "UNKNOWN";
+}
+
+int main() {
+
+    int pipefd[2];
+    pipe(pipefd);
+
+    pid_t pid = fork();
+
+    if (pid > 0) {
+
+        close(pipefd[0]);
+
+        int n;
+        scanf("%d", &n);
+        write(pipefd[1], &n, sizeof(n));
+
+        Patient p;
+
+        for (int i = 0; i < n; i++) {
+            scanf("%s %d %d", p.name, &p.heartRate, &p.oxygen);
+            write(pipefd[1], &p, sizeof(p));
+        }
+
+        close(pipefd[1]);
+        wait(NULL);
+    }
+
+    else {
+        close(pipefd[1]);
+
+        int n;
+        read(pipefd[0], &n, sizeof(n));
+
+        Patient p;
+        int critical = 0;
+
+        for (int i = 0; i < n; i++) {
+            read(pipefd[0], &p, sizeof(p));
+
+            char *s = status(p.heartRate, p.oxygen);
+
+            if (strcmp(s, "CRITICAL") == 0)
+                critical++;
+
+            printf("%s %d %d %s\n",
+                   p.name, p.heartRate, p.oxygen, s);
+        }
+
+        printf("Critical Cases: %d\n", critical);
+
+        close(pipefd[0]);
+    }
+
+    return 0;
+}
+
+
+
+#!/bin/bash
+
+read a
+read b
+
+while true
+do
+    echo "1.Add 2.Sub 3.Mul 4.Div 5.Exit"
+    read ch
+
+    case $ch in
+        1) echo $((a+b));;
+        2) echo $((a-b));;
+        3) echo $((a*b));;
+        4) echo $((a/b));;
+        5) exit;;
+    esac
+done
+
+
+
+
+#!/bin/bash
+
+read a
+read b
+
+while true
+do
+    echo "1.Add 2.Sub 3.Mul 4.Div 5.Exit"
+    read ch
+
+    case $ch in
+        1) echo $((a+b));;
+        2) echo $((a-b));;
+        3) echo $((a*b));;
+        4) echo $((a/b));;
+        5) exit;;
+    esac
+done
+
+
+
+
+#include <stdio.h>
+#include <unistd.h>
+#include <sys/types.h>
+#include <sys/wait.h>
+
+int main() {
+
+    int A[2], B[2], C[2];
+    pipe(A); pipe(B); pipe(C);
+
+    if (fork() == 0) {
+
+        if (fork() == 0) {
+
+            close(B[1]); close(C[0]);
+
+            int sum,n;
+            read(B[0], &sum, sizeof(sum));
+            read(B[0], &n, sizeof(n));
+
+            float avg = (float)sum/n;
+
+            write(C[1], &avg, sizeof(avg));
+
+            close(B[0]); close(C[1]);
+            _exit(0);
+        }
+
+        close(A[1]); close(B[0]);
+
+        int n;
+        read(A[0], &n, sizeof(n));
+
+        int arr[n], sum=0;
+
+        read(A[0], arr, sizeof(arr));
+
+        for(int i=0;i<n;i++) sum+=arr[i];
+
+        write(B[1], &sum, sizeof(sum));
+        write(B[1], &n, sizeof(n));
+
+        close(A[0]); close(B[1]);
+        wait(NULL);
+        _exit(0);
+    }
+
+    close(A[0]); close(B[0]); close(B[1]); close(C[1]);
+
+    int n;
+    scanf("%d",&n);
+
+    int arr[n];
+
+    for(int i=0;i<n;i++) scanf("%d",&arr[i]);
+
+    write(A[1], &n, sizeof(n));
+    write(A[1], arr, sizeof(arr));
+
+    close(A[1]);
+
+    float avg;
+    read(C[0], &avg, sizeof(avg));
+
+    printf("Average = %.2f\n", avg);
+
+    return 0;
+}
